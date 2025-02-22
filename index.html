@@ -1,40 +1,106 @@
 <!DOCTYPE html>
-<html lang="en" >
-<head>
-  <meta charset="UTF-8">
-  <title>Untitled</title>
-  
-
-</head>
-<body>
-<!-- partial:index.partial.html -->
-<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Video App Estilo YouTube</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
+    /* Reinicio básico */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       background-color: black;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
       overscroll-behavior: contain;
+      color: white;
+      position: relative;
+      padding-bottom: 60px; /* espacio para la barra de navegación inferior */
     }
-
+    /* Banner para "Añadir a pantalla de inicio" */
+    .a2hs-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #333;
+      color: #fff;
+      padding: 0.5rem;
+      text-align: center;
+      z-index: 1000;
+      display: none;
+    }
+    .a2hs-banner button {
+      background: transparent;
+      border: 1px solid #fff;
+      color: #fff;
+      padding: 0.25rem 0.5rem;
+      margin-left: 1rem;
+      cursor: pointer;
+    }
+    /* Header de búsqueda */
+    .header {
+      width: 100%;
+      padding: 0.5rem;
+      background: #181818;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+    }
+    .header input {
+      width: 70%;
+      padding: 0.5rem;
+      border: none;
+      border-radius: 4px;
+    }
+    .header button {
+      background: #ff2d55;
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .spinner {
+      margin-left: 0.5rem;
+      color: #ff2d55;
+    }
+    .hidden {
+      display: none;
+    }
+    /* Indicador offline */
+    .offline-indicator {
+      position: fixed;
+      top: 40px;
+      left: 0;
+      right: 0;
+      background-color: #ff2d55;
+      color: white;
+      text-align: center;
+      padding: 0.5rem;
+      transform: translateY(-100%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+    .offline-indicator.visible {
+      transform: translateY(0);
+    }
+    /* Contenedor principal de la app (sección Inicio) */
     .app-container {
-      height: 100vh;
+      height: calc(100vh - 60px);
       width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
+      position: relative;
     }
-
     .video-container {
       position: relative;
       width: 100%;
@@ -42,7 +108,6 @@
       height: 100%;
       overflow: hidden;
     }
-
     .upload-btn {
       position: absolute;
       top: 1rem;
@@ -61,24 +126,20 @@
       justify-content: center;
       transition: transform 0.3s ease;
     }
-
     .upload-btn:hover {
       transform: scale(1.1);
       background-color: rgba(64, 64, 64, 0.8);
     }
-
     .video-wrapper {
       width: 100%;
       height: 100%;
       position: relative;
     }
-
     video {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-
     .video-controls {
       position: absolute;
       right: 1rem;
@@ -88,12 +149,10 @@
       gap: 1rem;
       transition: transform 0.3s ease;
     }
-
     .video-controls.hidden {
       transform: translateX(100px);
     }
-
-    .like-btn {
+    .like-btn, .fav-btn {
       background: transparent;
       border: none;
       color: white;
@@ -102,18 +161,18 @@
       font-size: 1.8rem;
       transition: all 0.3s ease;
     }
-
     .like-btn.active {
       color: #ff2d55;
       animation: likeAnimation 0.5s ease;
     }
-
+    .fav-btn.active {
+      color: gold;
+    }
     @keyframes likeAnimation {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
       100% { transform: scale(1); }
     }
-
     .progress-container {
       position: absolute;
       bottom: 0;
@@ -122,14 +181,12 @@
       height: 3px;
       background-color: rgba(255, 255, 255, 0.2);
     }
-
     .progress-bar {
       height: 100%;
       background-color: white;
       width: 0%;
       transition: width 0.1s linear;
     }
-
     .video-indicators {
       position: absolute;
       right: 0.5rem;
@@ -139,7 +196,6 @@
       flex-direction: column;
       gap: 0.25rem;
     }
-
     .indicator {
       width: 4px;
       height: 4px;
@@ -147,13 +203,11 @@
       background-color: rgba(255, 255, 255, 0.5);
       transition: all 0.3s ease;
     }
-
     .indicator.active {
       background-color: white;
       height: 12px;
       border-radius: 2px;
     }
-
     .empty-state {
       width: 100%;
       height: 100%;
@@ -164,11 +218,9 @@
       text-align: center;
       padding: 1rem;
     }
-
     #fileInput {
       display: none;
     }
-
     .pause-indicator {
       position: absolute;
       top: 50%;
@@ -179,57 +231,120 @@
       opacity: 0;
       transition: all 0.3s ease;
     }
-
     .pause-indicator.visible {
       transform: translate(-50%, -50%) scale(1);
       opacity: 1;
     }
-
-    .double-tap-like {
+    /* Sección de Perfil */
+    .profile-section {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      color: #ff2d55;
-      font-size: 5rem;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .double-tap-like.active {
-      animation: doubleTapLike 0.8s ease forwards;
-    }
-
-    @keyframes doubleTapLike {
-      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-    }
-
-    .offline-indicator {
-      position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      background-color: #ff2d55;
+      bottom: 0;
+      background: black;
       color: white;
-      text-align: center;
-      padding: 0.5rem;
-      transform: translateY(-100%);
-      transition: transform 0.3s ease;
+      padding: 1rem;
+      z-index: 2000;
     }
-
-    .offline-indicator.visible {
-      transform: translateY(0);
+    .profile-section.hidden {
+      display: none;
+    }
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .profile-content {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .profile-photo {
+      position: relative;
+    }
+    .profile-photo img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .profile-photo input {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    .profile-info {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .profile-info input {
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: none;
+    }
+    .profile-info button {
+      background: #ff2d55;
+      border: none;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    /* Barra de navegación inferior */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #181818;
+      display: flex;
+      justify-content: space-around;
+      padding: 0.5rem 0;
+      z-index: 1000;
+    }
+    .bottom-nav button {
+      background: none;
+      border: none;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.9rem;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div class="offline-indicator">
+  <!-- Banner para "Añadir a la pantalla de inicio" -->
+  <div id="a2hsBanner" class="a2hs-banner">
+    <p>Para una mejor experiencia, añade esta app a tu pantalla de inicio.</p>
+    <button id="dismissA2HS">Cerrar</button>
+  </div>
+
+  <!-- Header de búsqueda -->
+  <header class="header">
+    <input type="text" id="searchInput" placeholder="Buscar video...">
+    <button id="searchBtn"><i class="fas fa-search"></i></button>
+    <div id="searchSpinner" class="spinner hidden">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
+  </header>
+
+  <!-- Indicador offline -->
+  <div class="offline-indicator" id="offlineIndicator">
     Sin conexión - Modo offline activado
   </div>
 
-  <div class="app-container">
+  <!-- Sección de Inicio -->
+  <div id="homeSection" class="app-container">
     <div class="video-container">
       <label class="upload-btn" for="fileInput">
         <i class="fas fa-cloud-upload-alt"></i>
@@ -243,8 +358,11 @@
       </div>
       
       <div class="video-controls">
-        <button class="like-btn">
+        <button class="like-btn" id="likeBtn">
           <i class="fas fa-heart"></i>
+        </button>
+        <button class="fav-btn" id="favBtn">
+          <i class="fas fa-star"></i>
         </button>
       </div>
       
@@ -254,59 +372,107 @@
         <i class="fas fa-pause"></i>
       </div>
 
-      <div class="double-tap-like">
-        <i class="fas fa-heart"></i>
-      </div>
-
       <div class="progress-container">
         <div class="progress-bar"></div>
       </div>
     </div>
   </div>
 
+  <!-- Sección de Perfil -->
+  <div id="profileSection" class="profile-section hidden">
+    <div class="profile-header">
+      <h2>Perfil</h2>
+      <button id="backToHome"><i class="fas fa-home"></i> Inicio</button>
+    </div>
+    <div class="profile-content">
+      <div class="profile-photo">
+        <img id="profileImage" src="https://via.placeholder.com/100" alt="Foto de perfil">
+        <input type="file" id="profilePhotoInput" accept="image/*">
+      </div>
+      <div class="profile-info">
+        <input type="text" id="usernameInput" placeholder="Nombre de usuario">
+        <button id="saveProfile">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de navegación inferior -->
+  <nav class="bottom-nav">
+    <button id="navHome"><i class="fas fa-home"></i><span>Inicio</span></button>
+    <button id="navProfile"><i class="fas fa-user"></i><span>Perfil</span></button>
+  </nav>
+
   <script>
+    /***************** Variables Globales ******************/
     let videos = [];
     let currentIndex = 0;
     let likes = {};
+    let favorites = {};
     let touchStartY = 0;
     let touchStartX = 0;
     let lastTapTime = 0;
     let touchStartTime = 0;
     let progressInterval;
 
+    /***************** Elementos del DOM ******************/
     const fileInput = document.getElementById('fileInput');
     const videoWrapper = document.getElementById('videoWrapper');
     const indicators = document.getElementById('indicators');
-    const controls = document.querySelector('.video-controls');
-    const pauseIndicator = document.querySelector('.pause-indicator');
-    const doubleTapLike = document.querySelector('.double-tap-like');
-    const offlineIndicator = document.querySelector('.offline-indicator');
+    const offlineIndicator = document.getElementById('offlineIndicator');
+    const likeBtn = document.getElementById('likeBtn');
+    const favBtn = document.getElementById('favBtn');
+    const searchBtn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchInput');
+    const searchSpinner = document.getElementById('searchSpinner');
+    const a2hsBanner = document.getElementById('a2hsBanner');
+    const dismissA2HS = document.getElementById('dismissA2HS');
+    const homeSection = document.getElementById('homeSection');
+    const profileSection = document.getElementById('profileSection');
+    const navHome = document.getElementById('navHome');
+    const navProfile = document.getElementById('navProfile');
+    const backToHome = document.getElementById('backToHome');
+    const profilePhotoInput = document.getElementById('profilePhotoInput');
+    const profileImage = document.getElementById('profileImage');
+    const saveProfile = document.getElementById('saveProfile');
 
-    // Detector de conexión
+    /***************** Detector “Añadir a pantalla de inicio” ******************/
+    if (window.navigator.standalone === false || window.matchMedia('(display-mode: browser)').matches) {
+      a2hsBanner.style.display = 'block';
+    }
+    dismissA2HS.addEventListener('click', () => {
+      a2hsBanner.style.display = 'none';
+    });
+
+    /***************** Función de Búsqueda en Tiempo Real ******************/
+    searchBtn.addEventListener('click', () => {
+      const query = searchInput.value.trim();
+      if (query !== "") {
+        searchSpinner.classList.remove('hidden');
+        // Simulación de búsqueda (en una app real se conectaría con una API)
+        setTimeout(() => {
+          searchSpinner.classList.add('hidden');
+          alert("Resultados de búsqueda para: " + query);
+        }, 1500);
+      }
+    });
+
+    /***************** Detector de conexión ******************/
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
-
     function updateOnlineStatus() {
       offlineIndicator.classList.toggle('visible', !navigator.onLine);
     }
+    updateOnlineStatus();
 
-    // Manejador de archivos
+    /***************** Manejador de Archivos (Videos) ******************/
     fileInput.addEventListener('change', handleFileUpload);
-    
-    // Eventos táctiles
-    document.addEventListener('touchstart', handleTouchStart, false);
-    document.addEventListener('touchmove', handleTouchMove, false);
-    document.addEventListener('touchend', handleTouchEnd, false);
-
     function handleFileUpload(event) {
       const files = Array.from(event.target.files).filter(file => file.type.startsWith('video/'));
-      
       videos = files.map(file => ({
         id: Math.random().toString(36).substr(2, 9),
         url: URL.createObjectURL(file),
         name: file.name
       }));
-
       if (videos.length > 0) {
         updateVideoDisplay();
         updateIndicators();
@@ -315,7 +481,6 @@
 
     function updateVideoDisplay() {
       if (videos.length === 0) return;
-
       videoWrapper.innerHTML = `
         <video
           src="${videos[currentIndex].url}"
@@ -325,33 +490,23 @@
           style="width: 100%; height: 100%; object-fit: cover;"
         ></video>
       `;
-
       const video = videoWrapper.querySelector('video');
-      
-      // Iniciar barra de progreso
       startProgressBar(video);
-
-      const likeBtn = document.querySelector('.like-btn');
-      likeBtn.classList.toggle('active', likes[videos[currentIndex].id]);
-      likeBtn.onclick = () => toggleLike(videos[currentIndex].id);
-
-      // Manejador de pausa/play al tocar
+      likeBtn.classList.toggle('active', !!likes[videos[currentIndex].id]);
       video.addEventListener('click', () => {
         if (video.paused) {
           video.play();
-          pauseIndicator.classList.remove('visible');
+          document.querySelector('.pause-indicator').classList.remove('visible');
         } else {
           video.pause();
-          pauseIndicator.classList.add('visible');
+          document.querySelector('.pause-indicator').classList.add('visible');
         }
       });
     }
 
     function startProgressBar(video) {
       const progressBar = document.querySelector('.progress-bar');
-      
       clearInterval(progressInterval);
-      
       progressInterval = setInterval(() => {
         const progress = (video.currentTime / video.duration) * 100;
         progressBar.style.width = `${progress}%`;
@@ -364,70 +519,91 @@
       `).join('');
     }
 
+    /***************** Funciones de Like y Favoritos ******************/
     function toggleLike(videoId) {
       likes[videoId] = !likes[videoId];
-      const likeBtn = document.querySelector('.like-btn');
       likeBtn.classList.toggle('active', likes[videoId]);
     }
+    likeBtn.addEventListener('click', () => {
+      if (videos.length > 0) {
+        toggleLike(videos[currentIndex].id);
+      }
+    });
+    favBtn.addEventListener('click', () => {
+      if (videos.length > 0) {
+        const videoId = videos[currentIndex].id;
+        favorites[videoId] = !favorites[videoId];
+        favBtn.classList.toggle('active', favorites[videoId]);
+      }
+    });
 
+    /***************** Eventos Táctiles (deslizamientos) ******************/
+    document.addEventListener('touchstart', handleTouchStart, false);
+    document.addEventListener('touchmove', handleTouchMove, false);
+    document.addEventListener('touchend', handleTouchEnd, false);
     function handleTouchStart(evt) {
       touchStartY = evt.touches[0].clientY;
       touchStartX = evt.touches[0].clientX;
       touchStartTime = Date.now();
-
-      // Detectar doble tap
-      const currentTime = new Date().getTime();
-      const tapLength = currentTime - lastTapTime;
-      
-      if (tapLength < 300 && tapLength > 0) {
-        // Doble tap detectado
-        toggleLike(videos[currentIndex].id);
-        doubleTapLike.classList.add('active');
-        setTimeout(() => doubleTapLike.classList.remove('active'), 800);
-        evt.preventDefault();
-      }
-      lastTapTime = currentTime;
+      // Se ha eliminado la detección de doble tap para no mostrar animaciones extra
+      lastTapTime = Date.now();
     }
-
     function handleTouchMove(evt) {
       if (!touchStartX) return;
-      
       const touchX = evt.touches[0].clientX;
       const diffX = touchStartX - touchX;
-
-      // Si el deslizamiento es horizontal, ocultar/mostrar controles
       if (Math.abs(diffX) > 30) {
-        controls.classList.toggle('hidden', diffX < 0);
+        document.querySelector('.video-controls').classList.toggle('hidden', diffX < 0);
       }
     }
-
     function handleTouchEnd(evt) {
       if (videos.length === 0) return;
-
       const touchEndY = evt.changedTouches[0].clientY;
       const diffY = touchStartY - touchEndY;
       const timeDiff = Date.now() - touchStartTime;
-
-      // Solo cambiar video si el deslizamiento es rápido y suficientemente largo
       if (Math.abs(diffY) > 50 && timeDiff < 300) {
         if (diffY > 0 && currentIndex < videos.length - 1) {
           currentIndex++;
-          updateVideoDisplay();
-          updateIndicators();
         } else if (diffY < 0 && currentIndex > 0) {
           currentIndex--;
-          updateVideoDisplay();
-          updateIndicators();
         }
+        updateVideoDisplay();
+        updateIndicators();
       }
-
       touchStartX = null;
     }
 
-    // Inicializar estado de conexión
-    updateOnlineStatus();
+    /***************** Navegación entre secciones ******************/
+    navHome.addEventListener('click', () => {
+      homeSection.classList.remove('hidden');
+      profileSection.classList.add('hidden');
+    });
+    navProfile.addEventListener('click', () => {
+      profileSection.classList.remove('hidden');
+      homeSection.classList.add('hidden');
+    });
+    backToHome.addEventListener('click', () => {
+      profileSection.classList.add('hidden');
+      homeSection.classList.remove('hidden');
+    });
 
-    // Service Worker para modo offline
+    /***************** Perfil: Subir foto y guardar nombre de usuario ******************/
+    profilePhotoInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          profileImage.src = evt.target.result;
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+    saveProfile.addEventListener('click', () => {
+      const username = document.getElementById('usernameInput').value;
+      alert("Perfil guardado: " + username);
+    });
+
+    /***************** Service Worker para modo offline ******************/
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').then(
         function(registration) {
@@ -439,9 +615,5 @@
       );
     }
   </script>
-</body>
-</html>
-<!-- partial -->
-  
 </body>
 </html>
