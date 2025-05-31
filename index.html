@@ -1440,15 +1440,15 @@
       }, 100);
     }
 
-    /***************** Transcripción de Audio del Video con API.VIDEO ******************/
-    const API_VIDEO_KEY = '3K2Wb78YTOqJpeV4YQfHwwjox2WfsAE3bIfGjNjlTsf';
-    const API_VIDEO_BASE_URL = 'https://ws.api.video';
+    /***************** Transcripción de Audio del Video con OpenAI Whisper ******************/
+    const OPENAI_API_KEY = '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';
+    const OPENAI_API_URL = 'https://api.openai.com/v1/audio/transcriptions';
+    
     let audioContext;
-    let mediaStreamSource;
-    let processor;
-    let mediaStream;
+    let mediaRecorder;
     let isTranscribing = false;
-    let transcriptionWebSocket = null;
+    let audioChunks = [];
+    let transcriptionInterval;
 
     async function initVideoAudioTranscription() {
       try {
@@ -1457,19 +1457,19 @@
           return;
         }
 
-        updateSubtitleStatus('Conectando con API.VIDEO...', true);
+        updateSubtitleStatus('Conectando con OpenAI Whisper...', true);
         
-        // Configurar WebSocket para transcripción en tiempo real
-        await setupApiVideoTranscription();
+        // Configurar captura de audio del video
+        await setupWhisperTranscription();
         
       } catch (error) {
-        console.error('Error al inicializar transcripción de video:', error);
+        console.error('Error al inicializar transcripción con Whisper:', error);
         updateSubtitleStatus('Error de conexión, usando modo simulado', false);
         simulateVideoTranscription();
       }
     }
 
-    async function setupApiVideoTranscription() {
+    async function setupWhisperTranscription() {
       try {
         // Crear contexto de audio para capturar el stream del video
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -1495,107 +1495,93 @@
           audioStream = destination.stream;
         }
 
-        // Conectar WebSocket a API.VIDEO
-        const wsUrl = `${API_VIDEO_BASE_URL}/live-streams/transcription`;
-        transcriptionWebSocket = new WebSocket(wsUrl);
+        // Configurar MediaRecorder para capturar audio
+        mediaRecorder = new MediaRecorder(audioStream, {
+          mimeType: 'audio/webm;codecs=opus'
+        });
         
-        transcriptionWebSocket.onopen = () => {
-          console.log('Conectado a API.VIDEO para transcripción');
-          isTranscribing = true;
-          updateSubtitleStatus('Transcripción activa con API.VIDEO', true);
-          
-          // Enviar configuración inicial
-          transcriptionWebSocket.send(JSON.stringify({
-            type: 'config',
-            apiKey: API_VIDEO_KEY,
-            language: getLanguageCode(sourceLanguage.value),
-            continuous: true,
-            interimResults: true
-          }));
-          
-          // Configurar MediaRecorder para enviar audio
-          setupAudioStreaming(audioStream);
-        };
+        audioChunks = [];
+        isTranscribing = true;
         
-        transcriptionWebSocket.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            
-            if (data.type === 'transcription' && data.text) {
-              console.log('Transcripción recibida:', data.text);
-              
-              if (translationEnabled && data.text.trim()) {
-                translateText(data.text);
-              } else if (subtitlesEnabled && data.text.trim()) {
-                displaySubtitle(data.text);
-              }
-            }
-          } catch (error) {
-            console.error('Error procesando transcripción:', error);
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
           }
         };
         
-        transcriptionWebSocket.onerror = (error) => {
-          console.error('Error WebSocket API.VIDEO:', error);
-          updateSubtitleStatus('Error de conexión', false);
-          fallbackToLocalTranscription();
+        mediaRecorder.onstop = async () => {
+          if (audioChunks.length > 0) {
+            await processAudioWithWhisper();
+          }
         };
         
-        transcriptionWebSocket.onclose = () => {
-          console.log('Conexión WebSocket cerrada');
-          isTranscribing = false;
-          updateSubtitleStatus('Conexión cerrada', false);
-        };
+        // Grabar en chunks de 5 segundos para enviar a Whisper
+        mediaRecorder.start();
+        updateSubtitleStatus('Transcripción activa con Whisper', true);
+        
+        // Configurar intervalo para procesar audio cada 5 segundos
+        transcriptionInterval = setInterval(() => {
+          if (isTranscribing && !landscapeVideo.paused) {
+            if (mediaRecorder.state === 'recording') {
+              mediaRecorder.stop();
+              setTimeout(() => {
+                if (isTranscribing) {
+                  audioChunks = [];
+                  mediaRecorder.start();
+                }
+              }, 100);
+            }
+          }
+        }, 5000);
         
       } catch (error) {
-        console.error('Error configurando API.VIDEO:', error);
+        console.error('Error configurando Whisper:', error);
         fallbackToLocalTranscription();
       }
     }
 
-    function setupAudioStreaming(audioStream) {
-      if (!audioStream || !transcriptionWebSocket) return;
+    async function processAudioWithWhisper() {
+      if (audioChunks.length === 0) return;
       
       try {
-        const mediaRecorder = new MediaRecorder(audioStream, {
-          mimeType: 'audio/webm;codecs=opus'
+        // Convertir chunks de audio a un blob
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        
+        // Crear FormData para enviar a OpenAI
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'audio.webm');
+        formData.append('model', 'whisper-1');
+        formData.append('language', getLanguageCode(sourceLanguage.value));
+        formData.append('response_format', 'json');
+        
+        // Enviar a OpenAI Whisper API
+        const response = await fetch(OPENAI_API_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
+          },
+          body: formData
         });
         
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0 && transcriptionWebSocket.readyState === WebSocket.OPEN) {
-            // Convertir blob a base64 para enviar por WebSocket
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const base64Audio = reader.result.split(',')[1];
-              transcriptionWebSocket.send(JSON.stringify({
-                type: 'audio',
-                data: base64Audio,
-                timestamp: Date.now()
-              }));
-            };
-            reader.readAsDataURL(event.data);
-          }
-        };
+        if (!response.ok) {
+          throw new Error(`Error de API: ${response.status} ${response.statusText}`);
+        }
         
-        // Enviar chunks de audio cada 250ms
-        mediaRecorder.start(250);
+        const data = await response.json();
         
-        // Detener cuando el video se pause
-        landscapeVideo.addEventListener('pause', () => {
-          if (mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
+        if (data.text && data.text.trim()) {
+          console.log('Transcripción Whisper:', data.text);
+          
+          if (translationEnabled && data.text.trim()) {
+            translateText(data.text);
+          } else if (subtitlesEnabled && data.text.trim()) {
+            displaySubtitle(data.text);
           }
-        });
-        
-        landscapeVideo.addEventListener('play', () => {
-          if (mediaRecorder.state === 'inactive' && subtitlesEnabled) {
-            mediaRecorder.start(250);
-          }
-        });
+        }
         
       } catch (error) {
-        console.error('Error configurando MediaRecorder:', error);
-        fallbackToLocalTranscription();
+        console.error('Error procesando audio con Whisper:', error);
+        updateSubtitleStatus('Error en transcripción', false);
       }
     }
 
@@ -1790,8 +1776,14 @@
         recognition.stop();
       }
       
-      if (transcriptionWebSocket && transcriptionWebSocket.readyState === WebSocket.OPEN) {
-        transcriptionWebSocket.close();
+      // Detener transcripción con Whisper
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+      
+      if (transcriptionInterval) {
+        clearInterval(transcriptionInterval);
+        transcriptionInterval = null;
       }
       
       isTranscribing = false;
@@ -1843,15 +1835,13 @@
       if (landscapeVideo.paused) {
         landscapeVideo.play();
         landscapePlayPause.innerHTML = '<i class="fas fa-pause"></i>';
-        if (subtitlesEnabled) {
-          recognition.start();
+        if (subtitlesEnabled && !isTranscribing) {
+          initVideoAudioTranscription();
         }
       } else {
         landscapeVideo.pause();
         landscapePlayPause.innerHTML = '<i class="fas fa-play"></i>';
-        if (recognition) {
-          recognition.stop();
-        }
+        stopSpeechRecognition();
       }
     });
 
@@ -1893,7 +1883,7 @@
       toggleSubtitles.innerHTML = `<i class="${icon}"></i> ${text}`;
       
       if (subtitlesEnabled && !landscapeVideo.paused) {
-        updateSubtitleStatus('Iniciando transcripción...', true);
+        updateSubtitleStatus('Iniciando transcripción con Whisper...', true);
         initVideoAudioTranscription();
       } else {
         stopSpeechRecognition();
