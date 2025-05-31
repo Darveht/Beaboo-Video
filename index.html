@@ -298,6 +298,166 @@
       border-radius: 4px;
       cursor: pointer;
     }
+    /* Reproductor personalizado para paisaje */
+    .landscape-player {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      z-index: 3000;
+      display: none;
+    }
+    .landscape-player.active {
+      display: flex;
+    }
+    .landscape-video-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .landscape-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .landscape-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .landscape-controls button {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+    .landscape-controls button:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    .landscape-progress {
+      flex: 1;
+      height: 4px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .landscape-progress-fill {
+      height: 100%;
+      background: #ff2d55;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    
+    /* Subtítulos modernos */
+    .subtitle-container {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 80%;
+      text-align: center;
+      z-index: 10;
+    }
+    .subtitle-text {
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Panel de configuración de subtítulos */
+    .subtitle-settings {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0,0,0,0.9);
+      border-radius: 8px;
+      padding: 1rem;
+      color: white;
+      display: none;
+      min-width: 250px;
+    }
+    .subtitle-settings.visible {
+      display: block;
+    }
+    .subtitle-settings select {
+      width: 100%;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border-radius: 4px;
+      border: none;
+      background: #333;
+      color: white;
+    }
+    .subtitle-settings button {
+      width: 100%;
+      padding: 0.5rem;
+      margin: 0.25rem 0;
+      border: none;
+      border-radius: 4px;
+      background: #ff2d55;
+      color: white;
+      cursor: pointer;
+    }
+    .subtitle-settings button:hover {
+      background: #e02347;
+    }
+    .subtitle-settings label {
+      display: block;
+      margin: 0.5rem 0 0.25rem 0;
+      font-size: 0.9rem;
+    }
+    
+    /* Indicador de transcripción activa */
+    .transcription-indicator {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(255, 45, 85, 0.8);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .transcription-indicator.active {
+      display: flex;
+    }
+    .transcription-indicator .pulse {
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
     /* Barra de navegación inferior */
     .bottom-nav {
       position: fixed;
@@ -396,6 +556,67 @@
     </div>
   </div>
 
+  <!-- Reproductor personalizado para paisaje -->
+  <div id="landscapePlayer" class="landscape-player">
+    <div class="landscape-video-container">
+      <video id="landscapeVideo" class="landscape-video" controls></video>
+      
+      <!-- Indicador de transcripción -->
+      <div id="transcriptionIndicator" class="transcription-indicator">
+        <div class="pulse"></div>
+        <span>Transcribiendo...</span>
+      </div>
+      
+      <!-- Configuración de subtítulos -->
+      <div id="subtitleSettings" class="subtitle-settings">
+        <h3>Configuración de Subtítulos</h3>
+        <label>Idioma de origen:</label>
+        <select id="sourceLanguage">
+          <option value="es-ES">Español</option>
+          <option value="en-US">Inglés</option>
+          <option value="fr-FR">Francés</option>
+          <option value="de-DE">Alemán</option>
+          <option value="it-IT">Italiano</option>
+          <option value="pt-BR">Portugués</option>
+        </select>
+        
+        <label>Traducir a:</label>
+        <select id="targetLanguage">
+          <option value="es">Español</option>
+          <option value="en">Inglés</option>
+          <option value="fr">Francés</option>
+          <option value="de">Alemán</option>
+          <option value="it">Italiano</option>
+          <option value="pt">Portugués</option>
+          <option value="ja">Japonés</option>
+          <option value="ko">Coreano</option>
+          <option value="zh">Chino</option>
+        </select>
+        
+        <button id="toggleSubtitles">Activar Subtítulos</button>
+        <button id="toggleTranslation">Activar Traducción</button>
+        <button id="closeSettings">Cerrar</button>
+      </div>
+      
+      <!-- Contenedor de subtítulos -->
+      <div id="subtitleContainer" class="subtitle-container">
+        <div id="subtitleText" class="subtitle-text"></div>
+      </div>
+      
+      <!-- Controles personalizados -->
+      <div class="landscape-controls">
+        <button id="landscapePlayPause"><i class="fas fa-play"></i></button>
+        <button id="landscapeRewind"><i class="fas fa-backward"></i></button>
+        <div class="landscape-progress">
+          <div id="landscapeProgressFill" class="landscape-progress-fill"></div>
+        </div>
+        <button id="landscapeForward"><i class="fas fa-forward"></i></button>
+        <button id="landscapeSubtitles"><i class="fas fa-closed-captioning"></i></button>
+        <button id="landscapeClose"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+  </div>
+
   <!-- Barra de navegación inferior -->
   <nav class="bottom-nav">
     <button id="navHome"><i class="fas fa-home"></i><span>Inicio</span></button>
@@ -413,6 +634,14 @@
     let lastTapTime = 0;
     let touchStartTime = 0;
     let progressInterval;
+    
+    // Variables para el reproductor personalizado
+    let isLandscape = false;
+    let recognition;
+    let subtitlesEnabled = false;
+    let translationEnabled = false;
+    let currentSubtitle = '';
+    let landscapeProgressInterval;
 
     /***************** Elementos del DOM ******************/
     const fileInput = document.getElementById('fileInput');
@@ -434,6 +663,25 @@
     const profilePhotoInput = document.getElementById('profilePhotoInput');
     const profileImage = document.getElementById('profileImage');
     const saveProfile = document.getElementById('saveProfile');
+    
+    // Elementos del reproductor personalizado
+    const landscapePlayer = document.getElementById('landscapePlayer');
+    const landscapeVideo = document.getElementById('landscapeVideo');
+    const subtitleContainer = document.getElementById('subtitleContainer');
+    const subtitleText = document.getElementById('subtitleText');
+    const subtitleSettings = document.getElementById('subtitleSettings');
+    const transcriptionIndicator = document.getElementById('transcriptionIndicator');
+    const sourceLanguage = document.getElementById('sourceLanguage');
+    const targetLanguage = document.getElementById('targetLanguage');
+    const toggleSubtitles = document.getElementById('toggleSubtitles');
+    const toggleTranslation = document.getElementById('toggleTranslation');
+    const closeSettings = document.getElementById('closeSettings');
+    const landscapePlayPause = document.getElementById('landscapePlayPause');
+    const landscapeRewind = document.getElementById('landscapeRewind');
+    const landscapeForward = document.getElementById('landscapeForward');
+    const landscapeSubtitles = document.getElementById('landscapeSubtitles');
+    const landscapeClose = document.getElementById('landscapeClose');
+    const landscapeProgressFill = document.getElementById('landscapeProgressFill');
 
     /***************** Detector “Añadir a pantalla de inicio” ******************/
     if (window.navigator.standalone === false || window.matchMedia('(display-mode: browser)').matches) {
@@ -601,6 +849,234 @@
     saveProfile.addEventListener('click', () => {
       const username = document.getElementById('usernameInput').value;
       alert("Perfil guardado: " + username);
+    });
+
+    /***************** Detector de Orientación ******************/
+    function handleOrientationChange() {
+      const orientation = window.screen.orientation || window.orientation;
+      const isLandscapeNow = window.innerWidth > window.innerHeight;
+      
+      if (isLandscapeNow && !isLandscape && videos.length > 0) {
+        isLandscape = true;
+        showLandscapePlayer();
+      } else if (!isLandscapeNow && isLandscape) {
+        isLandscape = false;
+        hideLandscapePlayer();
+      }
+    }
+
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.addEventListener('resize', handleOrientationChange);
+
+    /***************** Reproductor Personalizado ******************/
+    function showLandscapePlayer() {
+      if (videos.length === 0) return;
+      
+      const currentVideo = videoWrapper.querySelector('video');
+      if (currentVideo) {
+        landscapeVideo.src = currentVideo.src;
+        landscapeVideo.currentTime = currentVideo.currentTime;
+        landscapePlayer.classList.add('active');
+        landscapeVideo.play();
+        startLandscapeProgress();
+        initSpeechRecognition();
+      }
+    }
+
+    function hideLandscapePlayer() {
+      landscapePlayer.classList.remove('active');
+      const currentVideo = videoWrapper.querySelector('video');
+      if (currentVideo && landscapeVideo.src) {
+        currentVideo.currentTime = landscapeVideo.currentTime;
+        if (!landscapeVideo.paused) {
+          currentVideo.play();
+        }
+      }
+      stopSpeechRecognition();
+      clearInterval(landscapeProgressInterval);
+    }
+
+    function startLandscapeProgress() {
+      clearInterval(landscapeProgressInterval);
+      landscapeProgressInterval = setInterval(() => {
+        if (landscapeVideo.duration) {
+          const progress = (landscapeVideo.currentTime / landscapeVideo.duration) * 100;
+          landscapeProgressFill.style.width = `${progress}%`;
+        }
+      }, 100);
+    }
+
+    /***************** Transcripción de Audio ******************/
+    function initSpeechRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        console.log('Speech recognition not supported');
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = sourceLanguage.value;
+
+      recognition.onstart = () => {
+        transcriptionIndicator.classList.add('active');
+      };
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        const fullTranscript = finalTranscript || interimTranscript;
+        if (fullTranscript && subtitlesEnabled) {
+          if (translationEnabled) {
+            translateText(fullTranscript);
+          } else {
+            displaySubtitle(fullTranscript);
+          }
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+      };
+
+      recognition.onend = () => {
+        if (subtitlesEnabled && !landscapeVideo.paused) {
+          recognition.start();
+        } else {
+          transcriptionIndicator.classList.remove('active');
+        }
+      };
+    }
+
+    function stopSpeechRecognition() {
+      if (recognition) {
+        recognition.stop();
+        transcriptionIndicator.classList.remove('active');
+      }
+    }
+
+    /***************** Traducción con Google Translate API ******************/
+    async function translateText(text) {
+      if (!translationEnabled) {
+        displaySubtitle(text);
+        return;
+      }
+
+      try {
+        // Usando la API gratuita de Google Translate
+        const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${getLanguageCode(sourceLanguage.value)}&tl=${targetLanguage.value}&dt=t&q=${encodeURIComponent(text)}`);
+        const data = await response.json();
+        
+        if (data && data[0] && data[0][0]) {
+          const translatedText = data[0][0][0];
+          displaySubtitle(translatedText);
+        } else {
+          displaySubtitle(text);
+        }
+      } catch (error) {
+        console.error('Translation error:', error);
+        displaySubtitle(text);
+      }
+    }
+
+    function getLanguageCode(fullCode) {
+      return fullCode.split('-')[0];
+    }
+
+    function displaySubtitle(text) {
+      subtitleText.textContent = text;
+      subtitleContainer.style.display = 'block';
+      
+      // Ocultar después de 3 segundos si no hay nuevo texto
+      clearTimeout(subtitleContainer.hideTimeout);
+      subtitleContainer.hideTimeout = setTimeout(() => {
+        subtitleContainer.style.display = 'none';
+      }, 3000);
+    }
+
+    /***************** Event Listeners del Reproductor Personalizado ******************/
+    landscapePlayPause.addEventListener('click', () => {
+      if (landscapeVideo.paused) {
+        landscapeVideo.play();
+        landscapePlayPause.innerHTML = '<i class="fas fa-pause"></i>';
+        if (subtitlesEnabled) {
+          recognition.start();
+        }
+      } else {
+        landscapeVideo.pause();
+        landscapePlayPause.innerHTML = '<i class="fas fa-play"></i>';
+        if (recognition) {
+          recognition.stop();
+        }
+      }
+    });
+
+    landscapeRewind.addEventListener('click', () => {
+      landscapeVideo.currentTime = Math.max(0, landscapeVideo.currentTime - 10);
+    });
+
+    landscapeForward.addEventListener('click', () => {
+      landscapeVideo.currentTime = Math.min(landscapeVideo.duration, landscapeVideo.currentTime + 10);
+    });
+
+    landscapeSubtitles.addEventListener('click', () => {
+      subtitleSettings.classList.toggle('visible');
+    });
+
+    landscapeClose.addEventListener('click', () => {
+      hideLandscapePlayer();
+      // Forzar orientación vertical
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait');
+      }
+    });
+
+    toggleSubtitles.addEventListener('click', () => {
+      subtitlesEnabled = !subtitlesEnabled;
+      toggleSubtitles.textContent = subtitlesEnabled ? 'Desactivar Subtítulos' : 'Activar Subtítulos';
+      
+      if (subtitlesEnabled && !landscapeVideo.paused) {
+        initSpeechRecognition();
+        recognition.start();
+      } else {
+        stopSpeechRecognition();
+        subtitleContainer.style.display = 'none';
+      }
+    });
+
+    toggleTranslation.addEventListener('click', () => {
+      translationEnabled = !translationEnabled;
+      toggleTranslation.textContent = translationEnabled ? 'Desactivar Traducción' : 'Activar Traducción';
+    });
+
+    closeSettings.addEventListener('click', () => {
+      subtitleSettings.classList.remove('visible');
+    });
+
+    sourceLanguage.addEventListener('change', () => {
+      if (recognition) {
+        recognition.lang = sourceLanguage.value;
+      }
+    });
+
+    landscapeVideo.addEventListener('play', () => {
+      landscapePlayPause.innerHTML = '<i class="fas fa-pause"></i>';
+    });
+
+    landscapeVideo.addEventListener('pause', () => {
+      landscapePlayPause.innerHTML = '<i class="fas fa-play"></i>';
     });
 
     /***************** Service Worker para modo offline ******************/
