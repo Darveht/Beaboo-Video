@@ -650,21 +650,45 @@
       to { opacity: 1; transform: translateY(0); }
     }
     
-    /* Panel de configuración de subtítulos */
+    /* Panel de configuración de subtítulos - Pantalla completa */
     .subtitle-settings {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: rgba(0, 0, 0, 0.95);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.98);
       backdrop-filter: blur(20px);
-      border-radius: 16px;
-      border: 1px solid #333639;
-      padding: 24px;
+      border: none;
+      padding: 60px 24px 24px 24px;
       color: #ffffff;
       display: none;
-      min-width: 320px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      z-index: 4000;
+      overflow-y: auto;
       animation: slideIn 0.3s ease;
+    }
+    
+    .subtitle-settings .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #ffffff;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .subtitle-settings .close-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
     }
     
     @keyframes slideIn {
@@ -952,44 +976,45 @@
       
       <!-- Configuración de subtítulos -->
       <div id="subtitleSettings" class="subtitle-settings">
-        <h3><i class="fas fa-closed-captioning"></i> Subtítulos y Traducción</h3>
+        <button class="close-btn" id="closeSettings">
+          <i class="fas fa-times"></i>
+        </button>
         
-        <div class="subtitle-status" id="subtitleStatus">
-          <span>Estado: Inactivo</span>
-          <div class="status-indicator"></div>
+        <div style="max-width: 500px; margin: 0 auto;">
+          <h3 style="text-align: center; margin-bottom: 40px; font-size: 28px;">
+            <i class="fas fa-closed-captioning"></i> Subtítulos y Traducción
+          </h3>
+          
+          <div class="subtitle-status" id="subtitleStatus">
+            <span>Estado: Inactivo</span>
+            <div class="status-indicator"></div>
+          </div>
+          
+          <label style="font-size: 18px; margin: 24px 0 12px 0;">
+            <i class="fas fa-microphone"></i> Idioma del Video:
+          </label>
+          <select id="sourceLanguage" style="font-size: 18px; padding: 20px;">
+            <option value="es-ES">🇪🇸 Español</option>
+            <option value="en-US">🇺🇸 Inglés</option>
+            <option value="pt-BR">🇧🇷 Portugués</option>
+          </select>
+          
+          <label style="font-size: 18px; margin: 24px 0 12px 0;">
+            <i class="fas fa-language"></i> Traducir a:
+          </label>
+          <select id="targetLanguage" style="font-size: 18px; padding: 20px;">
+            <option value="es">🇪🇸 Español</option>
+            <option value="en">🇺🇸 Inglés</option>
+            <option value="pt">🇧🇷 Portugués</option>
+          </select>
+          
+          <button id="toggleSubtitles" style="font-size: 18px; padding: 20px; margin: 16px 0;">
+            <i class="fas fa-closed-captioning"></i> Activar Subtítulos
+          </button>
+          <button id="toggleTranslation" style="font-size: 18px; padding: 20px; margin: 16px 0;">
+            <i class="fas fa-language"></i> Activar Traducción
+          </button>
         </div>
-        
-        <label><i class="fas fa-microphone"></i> Idioma del Video:</label>
-        <select id="sourceLanguage">
-          <option value="es-ES">🇪🇸 Español</option>
-          <option value="en-US">🇺🇸 Inglés</option>
-          <option value="fr-FR">🇫🇷 Francés</option>
-          <option value="de-DE">🇩🇪 Alemán</option>
-          <option value="it-IT">🇮🇹 Italiano</option>
-          <option value="pt-BR">🇧🇷 Portugués</option>
-          <option value="ja-JP">🇯🇵 Japonés</option>
-          <option value="ko-KR">🇰🇷 Coreano</option>
-          <option value="zh-CN">🇨🇳 Chino</option>
-        </select>
-        
-        <label><i class="fas fa-language"></i> Traducir a:</label>
-        <select id="targetLanguage">
-          <option value="es">🇪🇸 Español</option>
-          <option value="en">🇺🇸 Inglés</option>
-          <option value="fr">🇫🇷 Francés</option>
-          <option value="de">🇩🇪 Alemán</option>
-          <option value="it">🇮🇹 Italiano</option>
-          <option value="pt">🇧🇷 Portugués</option>
-          <option value="ja">🇯🇵 Japonés</option>
-          <option value="ko">🇰🇷 Coreano</option>
-          <option value="zh">🇨🇳 Chino</option>
-          <option value="ar">🇸🇦 Árabe</option>
-          <option value="ru">🇷🇺 Ruso</option>
-        </select>
-        
-        <button id="toggleSubtitles"><i class="fas fa-closed-captioning"></i> Activar Subtítulos</button>
-        <button id="toggleTranslation"><i class="fas fa-language"></i> Activar Traducción</button>
-        <button id="closeSettings" class="secondary"><i class="fas fa-times"></i> Cerrar</button>
       </div>
       
       <!-- Contenedor de subtítulos -->
@@ -1415,12 +1440,15 @@
       }, 100);
     }
 
-    /***************** Transcripción de Audio del Video ******************/
+    /***************** Transcripción de Audio del Video con API.VIDEO ******************/
+    const API_VIDEO_KEY = '3K2Wb78YTOqJpeV4YQfHwwjox2WfsAE3bIfGjNjlTsf';
+    const API_VIDEO_BASE_URL = 'https://ws.api.video';
     let audioContext;
     let mediaStreamSource;
     let processor;
     let mediaStream;
     let isTranscribing = false;
+    let transcriptionWebSocket = null;
 
     async function initVideoAudioTranscription() {
       try {
@@ -1429,62 +1457,152 @@
           return;
         }
 
-        // Crear contexto de audio
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        updateSubtitleStatus('Conectando con API.VIDEO...', true);
         
-        // Método 1: Intentar capturar stream directamente del video
-        const video = landscapeVideo;
+        // Configurar WebSocket para transcripción en tiempo real
+        await setupApiVideoTranscription();
         
-        try {
-          // Para navegadores que soportan captureStream
-          if (video.captureStream) {
-            mediaStream = video.captureStream();
-          } else if (video.mozCaptureStream) {
-            mediaStream = video.mozCaptureStream();
-          } else {
-            throw new Error('captureStream no soportado');
-          }
-
-          const audioTracks = mediaStream.getAudioTracks();
-          if (audioTracks.length === 0) {
-            throw new Error('No hay pistas de audio en el video');
-          }
-
-          console.log('Usando audio del video directamente');
-          
-          // Crear fuente de audio desde el stream del video
-          mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
-          
-          // Configurar Web Speech API con audio del video
-          setupSpeechRecognitionWithVideoAudio();
-          
-        } catch (videoError) {
-          console.log('No se puede capturar audio del video:', videoError.message);
-          console.log('Intentando método alternativo...');
-          
-          // Método 2: Usar Web Audio API para procesar el audio del video
-          try {
-            const audioSource = audioContext.createMediaElementSource(video);
-            const destination = audioContext.createMediaStreamDestination();
-            audioSource.connect(destination);
-            audioSource.connect(audioContext.destination); // Mantener audio audible
-            
-            mediaStream = destination.stream;
-            setupSpeechRecognitionWithVideoAudio();
-            
-          } catch (webAudioError) {
-            console.log('Web Audio API falló:', webAudioError.message);
-            console.log('Usando transcripción simulada basada en tiempo del video');
-            
-            // Método 3: Fallback - simulación de transcripción
-            simulateVideoTranscription();
-          }
-        }
-
       } catch (error) {
         console.error('Error al inicializar transcripción de video:', error);
+        updateSubtitleStatus('Error de conexión, usando modo simulado', false);
         simulateVideoTranscription();
       }
+    }
+
+    async function setupApiVideoTranscription() {
+      try {
+        // Crear contexto de audio para capturar el stream del video
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const video = landscapeVideo;
+        
+        // Obtener stream de audio del video
+        let audioStream;
+        if (video.captureStream) {
+          const videoStream = video.captureStream();
+          const audioTracks = videoStream.getAudioTracks();
+          
+          if (audioTracks.length > 0) {
+            audioStream = new MediaStream(audioTracks);
+          } else {
+            throw new Error('No hay audio en el video');
+          }
+        } else {
+          // Fallback: usar Web Audio API
+          const source = audioContext.createMediaElementSource(video);
+          const destination = audioContext.createMediaStreamDestination();
+          source.connect(destination);
+          source.connect(audioContext.destination);
+          audioStream = destination.stream;
+        }
+
+        // Conectar WebSocket a API.VIDEO
+        const wsUrl = `${API_VIDEO_BASE_URL}/live-streams/transcription`;
+        transcriptionWebSocket = new WebSocket(wsUrl);
+        
+        transcriptionWebSocket.onopen = () => {
+          console.log('Conectado a API.VIDEO para transcripción');
+          isTranscribing = true;
+          updateSubtitleStatus('Transcripción activa con API.VIDEO', true);
+          
+          // Enviar configuración inicial
+          transcriptionWebSocket.send(JSON.stringify({
+            type: 'config',
+            apiKey: API_VIDEO_KEY,
+            language: getLanguageCode(sourceLanguage.value),
+            continuous: true,
+            interimResults: true
+          }));
+          
+          // Configurar MediaRecorder para enviar audio
+          setupAudioStreaming(audioStream);
+        };
+        
+        transcriptionWebSocket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'transcription' && data.text) {
+              console.log('Transcripción recibida:', data.text);
+              
+              if (translationEnabled && data.text.trim()) {
+                translateText(data.text);
+              } else if (subtitlesEnabled && data.text.trim()) {
+                displaySubtitle(data.text);
+              }
+            }
+          } catch (error) {
+            console.error('Error procesando transcripción:', error);
+          }
+        };
+        
+        transcriptionWebSocket.onerror = (error) => {
+          console.error('Error WebSocket API.VIDEO:', error);
+          updateSubtitleStatus('Error de conexión', false);
+          fallbackToLocalTranscription();
+        };
+        
+        transcriptionWebSocket.onclose = () => {
+          console.log('Conexión WebSocket cerrada');
+          isTranscribing = false;
+          updateSubtitleStatus('Conexión cerrada', false);
+        };
+        
+      } catch (error) {
+        console.error('Error configurando API.VIDEO:', error);
+        fallbackToLocalTranscription();
+      }
+    }
+
+    function setupAudioStreaming(audioStream) {
+      if (!audioStream || !transcriptionWebSocket) return;
+      
+      try {
+        const mediaRecorder = new MediaRecorder(audioStream, {
+          mimeType: 'audio/webm;codecs=opus'
+        });
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0 && transcriptionWebSocket.readyState === WebSocket.OPEN) {
+            // Convertir blob a base64 para enviar por WebSocket
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64Audio = reader.result.split(',')[1];
+              transcriptionWebSocket.send(JSON.stringify({
+                type: 'audio',
+                data: base64Audio,
+                timestamp: Date.now()
+              }));
+            };
+            reader.readAsDataURL(event.data);
+          }
+        };
+        
+        // Enviar chunks de audio cada 250ms
+        mediaRecorder.start(250);
+        
+        // Detener cuando el video se pause
+        landscapeVideo.addEventListener('pause', () => {
+          if (mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+          }
+        });
+        
+        landscapeVideo.addEventListener('play', () => {
+          if (mediaRecorder.state === 'inactive' && subtitlesEnabled) {
+            mediaRecorder.start(250);
+          }
+        });
+        
+      } catch (error) {
+        console.error('Error configurando MediaRecorder:', error);
+        fallbackToLocalTranscription();
+      }
+    }
+
+    function fallbackToLocalTranscription() {
+      console.log('Usando transcripción local como fallback');
+      updateSubtitleStatus('Usando transcripción local', true);
+      setupSpeechRecognitionWithVideoAudio();
     }
 
     function setupSpeechRecognitionWithVideoAudio() {
@@ -1670,8 +1788,15 @@
     function stopSpeechRecognition() {
       if (recognition) {
         recognition.stop();
-        transcriptionIndicator.classList.remove('active');
       }
+      
+      if (transcriptionWebSocket && transcriptionWebSocket.readyState === WebSocket.OPEN) {
+        transcriptionWebSocket.close();
+      }
+      
+      isTranscribing = false;
+      transcriptionIndicator.classList.remove('active');
+      updateSubtitleStatus('Transcripción detenida', false);
     }
 
     /***************** Traducción con Google Translate API ******************/
