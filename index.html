@@ -139,6 +139,15 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      pointer-events: none; /* Bloquea controles nativos */
+    }
+    
+    video::-webkit-media-controls {
+      display: none !important;
+    }
+    
+    video::-webkit-media-controls-enclosure {
+      display: none !important;
     }
     .video-controls {
       position: absolute;
@@ -321,6 +330,15 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
+      pointer-events: none; /* Bloquea controles nativos */
+    }
+    
+    .landscape-video::-webkit-media-controls {
+      display: none !important;
+    }
+    
+    .landscape-video::-webkit-media-controls-enclosure {
+      display: none !important;
     }
     .landscape-controls {
       position: absolute;
@@ -735,13 +753,21 @@
           autoplay
           loop
           playsinline
-          style="width: 100%; height: 100%; object-fit: cover;"
+          controls="false"
+          style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;"
         ></video>
       `;
       const video = videoWrapper.querySelector('video');
+      
+      // Remover controles nativos completamente
+      video.removeAttribute('controls');
+      video.controls = false;
+      
       startProgressBar(video);
       likeBtn.classList.toggle('active', !!likes[videos[currentIndex].id]);
-      video.addEventListener('click', () => {
+      
+      // Click en el contenedor, no en el video
+      videoWrapper.addEventListener('click', () => {
         if (video.paused) {
           video.play();
           document.querySelector('.pause-indicator').classList.remove('visible');
@@ -876,10 +902,18 @@
       if (currentVideo) {
         landscapeVideo.src = currentVideo.src;
         landscapeVideo.currentTime = currentVideo.currentTime;
+        landscapeVideo.removeAttribute('controls');
+        landscapeVideo.controls = false;
         landscapePlayer.classList.add('active');
         landscapeVideo.play();
         startLandscapeProgress();
-        initSpeechRecognition();
+        
+        // Esperar a que el video esté listo antes de iniciar transcripción
+        landscapeVideo.addEventListener('loadeddata', () => {
+          if (subtitlesEnabled) {
+            initVideoAudioTranscription();
+          }
+        });
       }
     }
 
@@ -906,7 +940,96 @@
       }, 100);
     }
 
-    /***************** Transcripción de Audio ******************/
+    /***************** Transcripción de Audio del Video ******************/
+    let audioContext;
+    let mediaStreamSource;
+    let processor;
+    let mediaStream;
+
+    async function initVideoAudioTranscription() {
+      try {
+        // Crear contexto de audio
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Crear stream desde el elemento video
+        const video = landscapeVideo;
+        mediaStream = video.captureStream ? video.captureStream() : video.mozCaptureStream();
+        
+        if (!mediaStream) {
+          console.log('Captura de audio del video no soportada, usando reconocimiento de voz del micrófono');
+          initSpeechRecognition();
+          return;
+        }
+
+        mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
+        
+        // Configurar Web Speech API para capturar audio del video
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          recognition = new SpeechRecognition();
+          
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = sourceLanguage.value;
+
+          recognition.onstart = () => {
+            transcriptionIndicator.classList.add('active');
+          };
+
+          recognition.onresult = (event) => {
+            let finalTranscript = '';
+            let interimTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const transcript = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                finalTranscript += transcript;
+              } else {
+                interimTranscript += transcript;
+              }
+            }
+
+            const fullTranscript = finalTranscript || interimTranscript;
+            if (fullTranscript && subtitlesEnabled) {
+              if (translationEnabled) {
+                translateText(fullTranscript);
+              } else {
+                displaySubtitle(fullTranscript);
+              }
+            }
+          };
+
+          recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            // Reintentar después de 2 segundos
+            setTimeout(() => {
+              if (subtitlesEnabled && !landscapeVideo.paused) {
+                recognition.start();
+              }
+            }, 2000);
+          };
+
+          recognition.onend = () => {
+            if (subtitlesEnabled && !landscapeVideo.paused) {
+              // Reiniciar automáticamente para transcripción continua
+              setTimeout(() => {
+                recognition.start();
+              }, 100);
+            } else {
+              transcriptionIndicator.classList.remove('active');
+            }
+          };
+
+          // Iniciar reconocimiento
+          recognition.start();
+        }
+
+      } catch (error) {
+        console.error('Error al inicializar transcripción de video:', error);
+        initSpeechRecognition(); // Fallback al micrófono
+      }
+    }
+
     function initSpeechRecognition() {
       if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
         console.log('Speech recognition not supported');
@@ -958,6 +1081,8 @@
           transcriptionIndicator.classList.remove('active');
         }
       };
+
+      recognition.start();
     }
 
     function stopSpeechRecognition() {
@@ -1048,8 +1173,7 @@
       toggleSubtitles.textContent = subtitlesEnabled ? 'Desactivar Subtítulos' : 'Activar Subtítulos';
       
       if (subtitlesEnabled && !landscapeVideo.paused) {
-        initSpeechRecognition();
-        recognition.start();
+        initVideoAudioTranscription();
       } else {
         stopSpeechRecognition();
         subtitleContainer.style.display = 'none';
